@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Pagar - El Sabor del Maíz Ancestral de Cartagena</title>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="apple-touch-icon" href="img/apple-icon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/templatemo.css">
+    <link rel="stylesheet" href="css/custom.css">
+
+    <!-- Load fonts style after rendering the layout styles -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;200;300;400;500;700;900&display=swap">
+    <link rel="stylesheet" href="css/fontawesome.min.css">
+
+    <!--
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        .form-section { margin-bottom: 20px; }
+        .hidden { display: none; }
+        label { display: block; margin-top: 10px; }
+        input, select { width: 100%; padding: 8px; margin-top: 5px; }
+        .total { font-size: 1.2em; font-weight: bold; margin-bottom: 20px; }
+        button { padding: 10px 20px; font-size: 1em; }
+    </style>-->
+
+    <script src="bbdd/consultas.js"></script>
+</head>
+<body>
+    <!-- Contenedor para cargar la barra de menú usando JavaScript --> 
+    <div id="menu"></div> 
+    <!-- Contenido de la página - Inicio  --> 
+
+    <a href="productos.html">← Volver a productos</a>
+    
+    <div class="payment-form">
+
+    <h1>Formulario de Pago</h1>
+    <div class="total">Total a pagar: <span id="total">COP $0</span></div>
+    <form id="pagoForm">
+        <div class="form-section">
+            <label for="nombre">Nombre completo:</label>
+            <input type="text" id="nombre" name="nombre" required>
+        </div>
+        <div class="form-section">
+            <label for="email">Correo electrónico:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-section">
+            <label for="metodo">Forma de pago:</label>
+            <select id="metodo" name="metodo" required>
+                <option value="">Seleccione una opción</option>
+                <option value="debito">Tarjeta Débito</option>
+                <option value="credito">Tarjeta Crédito</option>
+                <option value="nequi">Nequi</option>
+                <option value="efectivo">Efectivo</option>
+            </select>
+        </div>
+        <!-- Tarjeta Débito -->
+        <div id="debitoFields" class="form-section hidden">
+            <label for="debitoNumero">Número de tarjeta débito:</label>
+            <input type="text" id="debitoNumero" name="debitoNumero" maxlength="16">
+            <label for="debitoVencimiento">Fecha de vencimiento:</label>
+            <input type="month" id="debitoVencimiento" name="debitoVencimiento">
+            <label for="debitoCvv">CVV:</label>
+            <input type="text" id="debitoCvv" name="debitoCvv" maxlength="3">
+        </div>
+        <!-- Tarjeta Crédito -->
+        <div id="creditoFields" class="form-section hidden">
+            <label for="creditoNumero">Número de tarjeta crédito:</label>
+            <input type="text" id="creditoNumero" name="creditoNumero" maxlength="16">
+            <label for="creditoVencimiento">Fecha de vencimiento:</label>
+            <input type="month" id="creditoVencimiento" name="creditoVencimiento">
+            <label for="creditoCvv">CVV:</label>
+            <input type="text" id="creditoCvv" name="creditoCvv" maxlength="3">
+        </div>
+        <!-- Nequi -->
+        <div id="nequiFields" class="form-section hidden">
+            <label for="nequiTelefono">Número de teléfono asociado a Nequi:</label>
+            <input type="text" id="nequiTelefono" name="nequiTelefono" maxlength="10">
+        </div>
+        <!-- Efectivo -->
+        <div id="efectivoFields" class="form-section hidden">
+            <p>El pago en efectivo se realiza al momento de la entrega.</p>
+        </div>
+        <button type="submit">Pagar</button>
+    </form>
+
+    </div>
+    <script>
+        // Simulación de total (puedes cambiarlo por el valor real desde productos.html)
+        let carrito = obtenerCarrito(); // Función para obtener el carrito desde localStorage
+        let etiqueta_total = document.getElementById('total');
+        let total = 0;
+        carrito.forEach(item => {
+            total += item.precio;
+        });
+        etiqueta_total.textContent = 'COP $' + total.toFixed(2);
+        
+       //document.getElementById('total').textContent = 'COP $0';
+    </script>
+
+    <script>
+
+
+        const metodo = document.getElementById('metodo');
+        const debitoFields = document.getElementById('debitoFields');
+        const creditoFields = document.getElementById('creditoFields');
+        const nequiFields = document.getElementById('nequiFields');
+        const efectivoFields = document.getElementById('efectivoFields');
+
+        metodo.addEventListener('change', function() {
+            debitoFields.classList.add('hidden');
+            creditoFields.classList.add('hidden');
+            nequiFields.classList.add('hidden');
+            efectivoFields.classList.add('hidden');
+            if (this.value === 'debito') debitoFields.classList.remove('hidden');
+            if (this.value === 'credito') creditoFields.classList.remove('hidden');
+            if (this.value === 'nequi') nequiFields.classList.remove('hidden');
+            if (this.value === 'efectivo') efectivoFields.classList.remove('hidden');
+        });
+
+        document.getElementById('pagoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let valid = true;
+            // Validación básica
+            if (!document.getElementById('nombre').value.trim() ||
+                    !document.getElementById('email').value.trim() ||
+                    !metodo.value) valid = false;
+
+            if (metodo.value === 'debito') {
+                if (!document.getElementById('debitoNumero').value.trim() ||
+                        !document.getElementById('debitoVencimiento').value ||
+                        !document.getElementById('debitoCvv').value.trim()) valid = false;
+            }
+            if (metodo.value === 'credito') {
+                if (!document.getElementById('creditoNumero').value.trim() ||
+                        !document.getElementById('creditoVencimiento').value ||
+                        !document.getElementById('creditoCvv').value.trim()) valid = false;
+            }
+            if (metodo.value === 'nequi') {
+                if (!document.getElementById('nequiTelefono').value.trim()) valid = false;
+            }
+            // Efectivo no requiere campos extra
+
+            if (!valid) {
+                alert('Diligencie todos los campos');
+                return;
+            }
+            alert('Su transacción ha sido exitosa. Gracias por su compra.');
+            this.reset();
+            debitoFields.classList.add('hidden');
+            creditoFields.classList.add('hidden');
+            nequiFields.classList.add('hidden');
+            efectivoFields.classList.add('hidden');
+        });
+    </script>
+
+<!-- Contenido de la página - Final  --> 
+    <!-- Contenedor para cargar el pie de página usando JavaScript --> 
+    <div id="pie"></div> 
+
+    <!-- Start Script -->
+    <script src="js/jquery-1.11.0.min.js"></script>
+    <script src="js/jquery-migrate-1.2.1.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/templatemo.js"></script>
+    <script src="js/custom.js"></script>
+    <!-- End Script -->
+
+    <script> 
+        document.addEventListener("DOMContentLoaded", () => { 
+            cargarFragmento("menu", "menu.html"); 
+            cargarFragmento("pie", "pie.html"); 
+        }); 
+    </script> 
+
+</body>
+</html>
